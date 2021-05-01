@@ -35,8 +35,7 @@
                          xyz_ent_data_WCS entity_value
                         ) 
 
-  (setq oldsnap (getvar "osmode"))
-  (setvar "osmode" 0)
+
 
   (setq counter 0)
   (setq PtList nil) ;nil out the list outside repeat
@@ -77,6 +76,7 @@
                          ss_lines
                          (cadr baseLeftXPt_MaxLength_list)
                          (car baseLeftXPt_MaxLength_list)
+                         roll_radius
                        )
   ) ; returns list of notch start end locations
 
@@ -134,7 +134,8 @@
   )
 
   ; (setq base_line (ssget '((0 . "CIRCLE"))))
-
+  (setq oldsnap (getvar "osmode"))
+  (setvar "osmode" 0)
   (setq center_point (getpoint "select insert center point"))
 
   (setq start-angle-dxf (find-start-angle-rad (/ base_arc_length 2) roll_radius))
@@ -167,8 +168,36 @@
   (setq outsideP3 (polar center_point end-angle-dxf offset_towards_roll_radius))
   (setq outsideP4 (polar center_point end-angle-dxf offset_away_roll_radius))
 
+  ;notch line 1
+  (setq outsideP5 (polar center_point 
+                         (+ start-angle-dxf (car sheetNotchList))
+                         offset_towards_roll_radius
+                  )
+  )
+  (setq outsideP6 (polar center_point 
+                         (+ start-angle-dxf (car sheetNotchList))
+                         offset_away_roll_radius
+                  )
+  )
+
+  ;notch line 2
+  (setq outsideP7 (polar center_point 
+                         (+ start-angle-dxf (cadr sheetNotchList))
+                         offset_towards_roll_radius
+                  )
+  )
+  (setq outsideP8 (polar center_point 
+                         (+ start-angle-dxf (cadr sheetNotchList))
+                         offset_away_roll_radius
+                  )
+  )
+
   (line outsideP1 outsideP2 layerDXFObject)
   (line outsideP3 outsideP4 layerDXFObject)
+
+  ;notch lines
+  (line outsideP5 outsideP6 layerDXFObject)
+  (line outsideP7 outsideP8 layerDXFObject)
   ;draw-hole-in-plan-view (ss thickness index objRollRadius ObjCenterPt baseXPt sAng / i ent_info radius)
 
   ; (draw-hole-in-plan-view top-bolt-row_ss material_thickness 0 roll_radius center_point baseLeftXPt start-angle-dxf)
@@ -186,7 +215,7 @@
 
   ; (entmake (list arc-dxf-0 center-dxf radius-dxf start-angle-dxf end-angle-dxf wcs-dxf)) ; offset away arc
 
-  (command "REGEN")
+  ; (command "REGEN")
   (setvar "osmode" oldsnap)
 ) ; end defun
 ;---------------------------------------------------------------------------------------------------------
@@ -564,7 +593,7 @@
 );end defun
 
 
-(defun SheetNotchFinder (ss maxLength basePt / cnt StartEndXPtList2 i 
+(defun SheetNotchFinder (ss maxLength basePt radius / cnt StartEndXPtList2 i 
                          start_point_WCS_Y end_point_WCS_y
                         )  ;needs to be able to find notch in the top and bottom even with a notch on both sides
   (setq cnt 0)
@@ -615,16 +644,51 @@
 
   (setq topLineSSIndex (cadr (car StartEndXPtList2_sort))) ;index
 
-  (setq XDist (maxlengthLine (ssname horizontalLines topLineSSIndex)))
+  (setq XDist (car (maxlengthLine (ssname horizontalLines topLineSSIndex)))) ; maxlengthline returns (list x_distance y_distance)
   ;basePt
   (if (not (equal XDist maxLength 0.000001)) 
     (progn  ; true progn
-           ;code for here get start and end point in relation to base pt then return it in a list or trasfer it to rad then return it-------------------------------------------------stopped here
+           (setq leftdistance (abs 
+                                (- basePt 
+                                   (car 
+                                     (cdr 
+                                       (assoc 10 
+                                              (entget 
+                                                (ssname horizontalLines 
+                                                        topLineSSIndex
+                                                )
+                                              )
+                                       )
+                                     )
+                                   )
+                                )
+                              )
+           )
+           (setq rightdistance (abs 
+                                 (- basePt 
+                                    (car 
+                                      (cdr 
+                                        (assoc 11 
+                                               (entget 
+                                                 (ssname horizontalLines 
+                                                         topLineSSIndex
+                                                 )
+                                               )
+                                        )
+                                      )
+                                    )
+                                 )
+                               )
+           )
+           (setq leftDistanceRad (arcLengthInRadians leftdistance radius))
+           (setq rightDistanceRad (arcLengthInRadians rightdistance radius))
+           ;  (setq output (list leftDistanceRad rightDistanceRad))
     ) ; end true progn
     (progn  ; false progn
            (princ "no notch")
     ) ; end false progn
   )
+  (list leftDistanceRad rightDistanceRad) ;return output
 );end defun
 
 
@@ -634,16 +698,16 @@
   (setq entInfo (entget ent))
 
   ;x distance
-  (setq startPoint_X (car (assoc 10 entInfo)))
-  (setq endPoint_X (car (assoc 11 entInfo)))
+  (setq startPoint_X (car (cdr (assoc 10 entInfo))))
+  (setq endPoint_X (car (cdr (assoc 11 entInfo))))
 
   (setq x_distance (abs (- startPoint_X endPoint_X)))
 
   ;y distance
-  (setq startPoint_y (cadr (assoc 10 entInfo)))
-  (setq endPoint_y (cadr (assoc 11 entInfo)))
+  (setq startPoint_y (cadr (cdr (assoc 10 entInfo))))
+  (setq endPoint_y (cadr (cdr (assoc 11 entInfo))))
 
-  (setq y_distance (abs (- startPoint_X endPoint_X)))
+  (setq y_distance (abs (- startPoint_y endPoint_y)))
 
   (list x_distance y_distance) ;return
 )

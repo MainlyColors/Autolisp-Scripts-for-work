@@ -168,36 +168,44 @@
   (setq outsideP3 (polar center_point end-angle-dxf offset_towards_roll_radius))
   (setq outsideP4 (polar center_point end-angle-dxf offset_away_roll_radius))
 
-  ;notch line 1
-  (setq outsideP5 (polar center_point 
-                         (+ start-angle-dxf (car sheetNotchList))
-                         offset_towards_roll_radius
-                  )
-  )
-  (setq outsideP6 (polar center_point 
-                         (+ start-angle-dxf (car sheetNotchList))
-                         offset_away_roll_radius
-                  )
-  )
+  
+  (if (and (= (car sheetNotchList) nil) (= (cadr sheetNotchList) nil))
+    (princ);if true
+    (progn
+        ;notch line 1
+        (setq outsideP5 (polar center_point 
+                              (+ start-angle-dxf (car sheetNotchList))
+                              offset_towards_roll_radius
+                        )
+        )
+        (setq outsideP6 (polar center_point 
+                              (+ start-angle-dxf (car sheetNotchList))
+                              offset_away_roll_radius
+                        )
+        )
 
-  ;notch line 2
-  (setq outsideP7 (polar center_point 
-                         (+ start-angle-dxf (cadr sheetNotchList))
-                         offset_towards_roll_radius
-                  )
-  )
-  (setq outsideP8 (polar center_point 
-                         (+ start-angle-dxf (cadr sheetNotchList))
-                         offset_away_roll_radius
-                  )
-  )
+        ;notch line 2
+        (setq outsideP7 (polar center_point 
+                              (+ start-angle-dxf (cadr sheetNotchList))
+                              offset_towards_roll_radius
+                        )
+        )
+        (setq outsideP8 (polar center_point 
+                              (+ start-angle-dxf (cadr sheetNotchList))
+                              offset_away_roll_radius
+                        )
+        )
+        ;notch lines
+        (line outsideP5 outsideP6 layerDXFObject)
+        (line outsideP7 outsideP8 layerDXFObject)
+    ); end else progn
+  ); end if
+  
+
 
   (line outsideP1 outsideP2 layerDXFObject)
   (line outsideP3 outsideP4 layerDXFObject)
 
-  ;notch lines
-  (line outsideP5 outsideP6 layerDXFObject)
-  (line outsideP7 outsideP8 layerDXFObject)
   ;draw-hole-in-plan-view (ss thickness index objRollRadius ObjCenterPt baseXPt sAng / i ent_info radius)
 
   ; (draw-hole-in-plan-view top-bolt-row_ss material_thickness 0 roll_radius center_point baseLeftXPt start-angle-dxf)

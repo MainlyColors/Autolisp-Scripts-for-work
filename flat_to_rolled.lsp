@@ -236,6 +236,15 @@
     (command "_.Erase" all_text_selected "") ; if true
   ) ;end if
 ); end defun
+
+
+(defun c:del-circle (/ all_circle_selected) 
+  (setq all_circle_selected (ssget '((0 . "CIRCLE"))))
+
+  (if all_circle_selected 
+    (command "_.Erase" all_circle_selected "") ; if true
+  ) ;end if
+); end defun
 ;---------------------------------------------------------------------------------------------------------
 
 ;-----------------------------------

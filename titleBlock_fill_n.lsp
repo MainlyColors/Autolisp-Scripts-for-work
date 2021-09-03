@@ -112,12 +112,17 @@ approver attribute: APPR_BY, APPR_DATE
 ;;;;date = string from user input or function
 ;;Fills in Drawer/checker/approver aslong as the attribute tags match below
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun titleBlkIntialsFillIn (vlaBlk person intials date Overwrite / attTag_By attTag_Date cnt AttVariantArr AttSafeArr arrLength attObject tagString)
-  
+(defun titleBlkIntialsFillIn (vlaBlk person intials date Overwrite / cnt ) ;attTag_By attTag_Date cnt AttVariantArr AttSafeArr arrLength attObject tagString
+
   (cond
     ((= person "Drawer") (setq attTag_By "DRWN_BY" attTag_Date "DRWN_DATE"))
     ((= person "Checker") (setq attTag_By "CHKD_BY" attTag_Date "CHKD_DATE"))
     ((= person "Approver") (setq attTag_By "APPR_BY" attTag_Date "APPR_DATE"))
+  );cond
+  
+  (cond
+    ((= Overwrite "No") (setq Overwrite nil))
+    ((= Overwrite "Yes") (setq Overwrite T))
   );cond
   
   (setq cnt 0)
@@ -128,16 +133,15 @@ approver attribute: APPR_BY, APPR_DATE
   (repeat arrLength
     (setq attObject (vlax-safearray-get-element AttSafeArr cnt))
     (setq tagString (vla-get-tagstring attObject))
+
     (setq textString (vla-get-textstring attObject))
-    
-    
+
     (cond
       ((= Overwrite T)
         ;by attribute title block
         (if (= tagString attTag_By)
           (vla-put-textstring attObject intials)
         );if
-       
         ;date attribute title block
         (if (= tagString attTag_Date)
           (vla-put-textstring attObject date)
@@ -209,7 +213,9 @@ approver attribute: APPR_BY, APPR_DATE
 ;;;;date = string from user input or function
 ;;Fills in Drawer/checker/approver on active drawing
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun UpdateCurrentActiveDwg (person intials date Overwrite / activeDoc)
+(defun UpdateCurrentActiveDwg (person intials date Overwrite /) ;activeDoc modelSpaceCollection blkRef
+  (princ "\nStart Current Drawing Update....")
+
   (setq activeDoc (vla-get-activedocument (vlax-get-acad-object)))
   (setq modelSpaceCollection (vla-get-modelspace activeDoc))
   
@@ -217,16 +223,17 @@ approver attribute: APPR_BY, APPR_DATE
   
   (if (setq blkRef (car blkReferenceVlaList))
     (progn
-    
       (titleBlkIntialsFillIn blkRef person intials date Overwrite)
-
       (vla-Regen activeDoc acActiveViewport) ;regen's active vieport
     );progn
   );if
+  (princ "\nCurrent Drawing Update Finished")
 );defun
 
 
-;set today date
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;gets current timestamp and converts it to a XX/XX/XXXX date format
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun TodayDate (/ dwgDate)
     (setq	dwgDate	(substr (rtos (getvar "cdate") 2 8) 1 8)
 	dwgDate	(strcat	(substr dwgDate 5 2)
@@ -238,7 +245,10 @@ approver attribute: APPR_BY, APPR_DATE
   ) ;setq
 );defun
 
-(defun c:Update-Title-Block (/)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;asks a series of questions to fill out titleblock intials
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun c:Update-Title-Block (/ titleBlkPerson updateCoverage intials date Overwrite)
   (initget 1 "Drawer Checker Approver")
   (setq titleBlkPerson (getkword "\nWhich field do you want to update? [Drawer/Checker/Approver]: "))
   
@@ -266,6 +276,7 @@ approver attribute: APPR_BY, APPR_DATE
   
   (cond
     ((= updateCoverage "Current")
+      (setq Overwrite "Yes")
       (UpdateCurrentActiveDwg titleBlkPerson intials date Overwrite)
      );current option
     ((= updateCoverage "All") 

@@ -49,9 +49,9 @@ approver attribute: APPR_BY, APPR_DATE
   2. check modelSpace for BlockReference list --DONE--
     - should check if drawing is read-only
   3. inside list find block instance by name --DONE--
-  4. determine if there is more then 1 somehow 
-  5. scrub the block and store the values 
-  6. if value is already filled in dont overwrite 
+  4. determine if there is more then 1 somehow (i dont think this is needed)
+  5. scrub the block and store the values (wasnt needed)
+  6. if value is already filled in dont overwrite --DONE--
   7.if empty, fill in --DONE--
   8. (idk if have to do this) - update/refresh the drawing --DONE--
   9. zoom e
@@ -140,7 +140,11 @@ approver attribute: APPR_BY, APPR_DATE
       ((= Overwrite T)
         ;by attribute title block
         (if (= tagString attTag_By)
+          (progn
           (vla-put-textstring attObject intials)
+          (princ "\nChanging drawing: ")
+          (princ (vla-get-windowtitle (vla-get-document attObject)))
+          );progn
         );if
         ;date attribute title block
         (if (= tagString attTag_Date)
@@ -150,7 +154,11 @@ approver attribute: APPR_BY, APPR_DATE
       ((= Overwrite nil)
        ;by attribute title block
        (if (and (= textString "") (= tagString attTag_By))
-         (vla-put-textstring attObject intials)
+         (progn
+          (vla-put-textstring attObject intials)
+          (princ "\nChanging drawing: ")
+          (princ (vla-get-windowtitle (vla-get-document attObject)))
+         )
        );if
        ;date attribute title block
       (if (and (= textString "") (= tagString attTag_Date))
@@ -190,11 +198,11 @@ approver attribute: APPR_BY, APPR_DATE
 
     (if (setq blkRef (car blkReferenceVlaList))
       (progn
-      
+        ; (changeReportAdd blkRef person);;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         (titleBlkIntialsFillIn blkRef person intials date Overwrite)
 
         ; (AttributeDump blkRef)
-
+        (princ "\n")
         (vla-Regen currentDoc acActiveViewport) ;regen's active vieport
       );progn
     );if
